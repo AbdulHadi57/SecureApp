@@ -56,17 +56,18 @@ pipeline {
         }
         
         stage('Run Tests') {
-            when {
-                expression { return params.RUN_TESTS == true }
-            }
             steps {
                 echo 'Running unit tests...'
-                bat '''
-                    call %VENV_DIR%\\Scripts\\activate.bat
-                    pytest --verbose --junit-xml=test-results.xml || echo "Pytest returned non-zero but continuing"
-                '''
+                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
+                    bat '''
+                        call %VENV_DIR%\\Scripts\\activate.bat
+                        pytest --verbose --junit-xml=test-results.xml
+                    '''
+                }
+                echo '"Tests completed (even if no tests were collected)"'
             }
         }
+
 
         stage('Maven Build') {
             when {
