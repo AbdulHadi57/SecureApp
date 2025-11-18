@@ -4,7 +4,7 @@ pipeline {
     environment {
         PYTHON_VERSION = '3.9'
         VENV_DIR = 'venv'
-        APP_NAME = 'ItemManagement'
+        APP_NAME = 'FirstApp'
         FLASK_ENV = 'production'
     }
     
@@ -53,7 +53,7 @@ pipeline {
                 echo 'Checking database schema...'
                 bat '''
                     call %VENV_DIR%\\Scripts\\activate.bat
-                    python -c "import sqlite3; conn = sqlite3.connect('items.db'); print('✓ Database accessible')" || exit 0
+                    python create_db.py
                 '''
             }
         }
@@ -67,10 +67,9 @@ pipeline {
                     xcopy /E /I /Y static dist\\static
                     xcopy /E /I /Y templates dist\\templates
                     copy app.py dist\\
-                    copy forms.py dist\\
+                    copy create_db.py dist\\
+                    copy clear_table.py dist\\
                     copy requirements.txt dist\\
-                    copy SECURITY_REPORT.md dist\\
-                    copy QUICKSTART.md dist\\
                 '''
             }
         }
