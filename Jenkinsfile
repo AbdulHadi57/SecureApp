@@ -6,11 +6,12 @@ pipeline {
         maven 'Maven'
     }
 
-    parameters {
+     parameters {
         booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Python unit tests?')
         booleanParam(name: 'RUN_MAVEN', defaultValue: false, description: 'Run Maven build stage?')
-        stringParam(name: 'BUILD_ENV', defaultValue: 'dev', description: 'Build environment (dev/stage/prod)')
+        string(name: 'BUILD_ENV', defaultValue: 'dev', description: 'Build environment (dev/stage/prod)')
     }
+
     
     environment {
         PYTHON_VERSION = '3.9'
