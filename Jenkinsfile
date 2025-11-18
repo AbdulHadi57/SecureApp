@@ -3,7 +3,7 @@ pipeline {
 
     tools {
         // Maven installed in Jenkins global tools (Manage Jenkins → Global Tools)
-        maven 'M3'
+        maven 'Maven'
     }
 
     parameters {
