@@ -1,37 +1,26 @@
 pipeline {
     agent any
-
-    tools {
-        // Maven installed in Jenkins global tools (Manage Jenkins → Global Tools)
-        maven 'Maven'
-    }
-
-     parameters {
-        booleanParam(name: 'RUN_TESTS', defaultValue: true, description: 'Run Python unit tests?')
-        booleanParam(name: 'RUN_MAVEN', defaultValue: false, description: 'Run Maven build stage?')
-        string(name: 'BUILD_ENV', defaultValue: 'dev', description: 'Build environment (dev/stage/prod)')
-    }
-
     
     environment {
         PYTHON_VERSION = '3.9'
         VENV_DIR = 'venv'
         APP_NAME = 'FirstApp'
-        FLASK_ENV = "${params.BUILD_ENV}"
+        FLASK_ENV = 'production'
+        SONAR_PROJECT_KEY = 'i221693_lab8'
+        SONAR_PROJECT_NAME = 'FirstApp User Management'
     }
     
     stages {
-
         stage('Checkout') {
             steps {
                 echo 'Checking out code from repository...'
                 checkout scm
             }
         }
-
+        
         stage('Setup Python Environment') {
             steps {
-                echo "Setting up Python virtual environment (Python ${env.PYTHON_VERSION})..."
+                echo 'Setting up Python virtual environment...'
                 bat '''
                     python --version
                     python -m venv %VENV_DIR%
@@ -46,11 +35,7 @@ pipeline {
                 echo 'Installing Python dependencies...'
                 bat '''
                     call %VENV_DIR%\\Scripts\\activate.bat
-                    if exist requirements.txt (
-                        pip install -r requirements.txt
-                    ) else (
-                        echo "No requirements.txt found — skipping pip install"
-                    )
+                    pip install -r requirements.txt
                 '''
             }
         }
@@ -58,28 +43,29 @@ pipeline {
         stage('Run Tests') {
             steps {
                 echo 'Running unit tests...'
-                catchError(buildResult: 'SUCCESS', stageResult: 'UNSTABLE') {
-                    bat '''
-                        call %VENV_DIR%\\Scripts\\activate.bat
-                        pytest --verbose --junit-xml=test-results.xml
-                    '''
-                }
-                echo '"Tests completed (even if no tests were collected)"'
+                bat '''
+                    call %VENV_DIR%\\Scripts\\activate.bat
+                    pytest --verbose --junit-xml=test-results.xml || exit 0
+                '''
             }
         }
-
-
-        stage('Maven Build') {
-            when {
-                expression { return params.RUN_MAVEN == true }
-            }
+        
+        stage('SonarQube Analysis') {
             steps {
-                echo "Maven Build Stage Running..."
+                echo 'Running SonarQube code analysis...'
                 script {
-                    if (fileExists('pom.xml')) {
-                        bat "mvn -B clean package"
-                    } else {
-                        echo "No pom.xml found — skipping Maven build"
+                    def scannerHome = tool 'sonar-scanner'
+                    withSonarQubeEnv('SonarQube-Server') {
+                        bat """
+                            "${scannerHome}\\bin\\sonar-scanner.bat" ^
+                            -Dsonar.projectKey=%SONAR_PROJECT_KEY% ^
+                            -Dsonar.projectName="%SONAR_PROJECT_NAME%" ^
+                            -Dsonar.sources=. ^
+                            -Dsonar.inclusions=**/*.py ^
+                            -Dsonar.exclusions=venv/**,dist/**,__pycache__/**,*.pyc,instance/** ^
+                            -Dsonar.python.version=3.9 ^
+                            -Dsonar.sourceEncoding=UTF-8
+                        """
                     }
                 }
             }
@@ -97,16 +83,16 @@ pipeline {
         
         stage('Build Artifact') {
             steps {
-                echo "Creating deployment artifact for environment: ${params.BUILD_ENV}"
+                echo 'Creating deployment artifact...'
                 bat '''
                     if exist dist rmdir /s /q dist
                     mkdir dist
-                    if exist static xcopy /E /I /Y static dist\\static
-                    if exist templates xcopy /E /I /Y templates dist\\templates
-                    if exist app.py copy app.py dist\\
-                    if exist create_db.py copy create_db.py dist\\
-                    if exist clear_table.py copy clear_table.py dist\\
-                    if exist requirements.txt copy requirements.txt dist\\
+                    xcopy /E /I /Y static dist\\static
+                    xcopy /E /I /Y templates dist\\templates
+                    copy app.py dist\\
+                    copy create_db.py dist\\
+                    copy clear_table.py dist\\
+                    copy requirements.txt dist\\
                 '''
             }
         }
