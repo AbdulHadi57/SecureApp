@@ -122,16 +122,7 @@ pipeline {
                 always {
                     // Publish test results to Jenkins
                     junit 'test-results.xml'
-                    
-                    // Publish HTML coverage reports
-                    publishHTML(target: [
-                        allowMissing: false,
-                        alwaysLinkToLastBuild: true,
-                        keepAll: true,
-                        reportDir: 'htmlcov',
-                        reportFiles: 'index.html',
-                        reportName: 'Test Coverage Report'
-                    ])
+
                 }
                 failure {
                     echo '✗ Unit tests failed! Please review the test results.'
