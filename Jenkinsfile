@@ -46,7 +46,7 @@ pipeline {
                 // Clone the Flask application repository from GitHub
                 git branch: 'main',
                     url: 'https://github.com/AbdulHadi57/SecureApp.git',
-                    credentialsId: 'github-credentials'
+                    
                 
                 echo '✓ Repository cloned successfully!'
             }
@@ -301,3 +301,4 @@ pipeline {
         }
     }
 }
+
