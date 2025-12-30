@@ -44,9 +44,7 @@ pipeline {
                 deleteDir()
                 
                 // Clone the Flask application repository from GitHub
-                git branch: 'main',
-                    url: 'https://github.com/AbdulHadi57/SecureApp.git',
-                    
+                checkout([$class: 'GitSCM', branches: [[name: '*/main']], userRemoteConfigs: [[url: 'https://github.com/AbdulHadi57/SecureApp.git']]])
                 
                 echo '✓ Repository cloned successfully!'
             }
@@ -301,4 +299,3 @@ pipeline {
         }
     }
 }
-
